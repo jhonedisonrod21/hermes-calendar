@@ -1,0 +1,6 @@
+rootProject.name = 'hermes-calendar'
+
+// Calendario (BD HERMES_CALENDAR): dominio de negocio.
+include 'hermes-catalog-service'
+include 'hermes-scheduling-service'
+include 'hermes-integration-hub-service'
