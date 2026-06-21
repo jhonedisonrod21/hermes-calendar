@@ -1,4 +1,4 @@
-package co.com.hermes.calendar.catalog.config;
+package co.com.hermes.calendar.scheduling.config;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
