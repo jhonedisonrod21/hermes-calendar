@@ -4,17 +4,28 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.cloud.client.loadbalancer.LoadBalanced;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Primary;
 import org.springframework.http.client.ClientHttpRequestFactory;
 import org.springframework.http.client.SimpleClientHttpRequestFactory;
 import org.springframework.web.client.RestClient;
 
 import java.time.Duration;
 
-/** Cliente HTTP balanceado (Eureka) hacia otros servicios del contexto, con timeouts. */
+/**
+ * Builders de RestClient. El plano (@Primary) lo usa el cliente HTTP de Eureka (que en Spring Boot 4
+ * usa RestClient); si el único builder fuera @LoadBalanced, Eureka trataría "localhost" como un
+ * service-id y no podría registrarse. El balanceado (cualificado) es para llamadas inter-servicio.
+ */
 @Configuration
 public class HttpClientConfig {
 
     @Bean
+    @Primary
+    RestClient.Builder restClientBuilder() {
+        return RestClient.builder();
+    }
+
+    @Bean("hermesLoadBalancedRestClientBuilder")
     @LoadBalanced
     RestClient.Builder loadBalancedRestClientBuilder(
             @Value("${hermes.http.connect-timeout:2s}") Duration connectTimeout,

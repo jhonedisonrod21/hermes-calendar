@@ -1,5 +1,6 @@
 package co.com.hermes.calendar.scheduling.catalog;
 
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Component;
@@ -19,7 +20,7 @@ public class CatalogClient {
     private final String internalApiKey;
 
     public CatalogClient(
-            RestClient.Builder loadBalancedRestClientBuilder,
+            @Qualifier("hermesLoadBalancedRestClientBuilder") RestClient.Builder loadBalancedRestClientBuilder,
             @Value("${hermes.catalog.base-url:http://hermes-catalog-service}") String catalogBaseUrl,
             @Value("${hermes.internal.api-key}") String internalApiKey
     ) {

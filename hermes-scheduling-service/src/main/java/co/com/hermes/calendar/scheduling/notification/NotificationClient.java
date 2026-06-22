@@ -2,6 +2,7 @@ package co.com.hermes.calendar.scheduling.notification;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestClient;
@@ -27,7 +28,7 @@ public class NotificationClient {
     private final String internalApiKey;
 
     public NotificationClient(
-            RestClient.Builder loadBalancedRestClientBuilder,
+            @Qualifier("hermesLoadBalancedRestClientBuilder") RestClient.Builder loadBalancedRestClientBuilder,
             @Value("${hermes.notification.base-url:http://hermes-notification-service}") String notificationBaseUrl,
             @Value("${hermes.internal.api-key}") String internalApiKey
     ) {
