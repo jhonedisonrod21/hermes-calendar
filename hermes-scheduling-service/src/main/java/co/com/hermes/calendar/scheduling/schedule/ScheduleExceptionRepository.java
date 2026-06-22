@@ -14,5 +14,7 @@ public interface ScheduleExceptionRepository extends JpaRepository<ScheduleExcep
 
     Optional<ScheduleException> findByIdAndTenantId(UUID id, UUID tenantId);
 
+    Optional<ScheduleException> findByTenantIdAndDate(UUID tenantId, LocalDate date);
+
     boolean existsByTenantIdAndDate(UUID tenantId, LocalDate date);
 }
