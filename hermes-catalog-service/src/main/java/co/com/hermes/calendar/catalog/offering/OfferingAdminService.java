@@ -69,10 +69,8 @@ public class OfferingAdminService {
                 request.requiresOnlinePayment()
         );
         offering.getRequirements().clear();
-        offerings.flush(); 
+        offerings.flush();
         offering.getRequirements().addAll(toRequirements(request.requirements()));  // …antes de los INSERT
-        return OfferingResponse.from(offering);
-
         return OfferingResponse.from(offering);
     }
 
