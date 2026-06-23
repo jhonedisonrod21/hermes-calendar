@@ -4,3 +4,6 @@ rootProject.name = 'hermes-calendar'
 include 'hermes-catalog-service'
 include 'hermes-scheduling-service'
 include 'hermes-integration-hub-service'
+// Generación de reportes con plantillas JasperReports (PDF). Servicio sin BD (stateless):
+// agrega datos de payment/scheduling/catalog vía sus endpoints internos.
+include 'hermes-reports'

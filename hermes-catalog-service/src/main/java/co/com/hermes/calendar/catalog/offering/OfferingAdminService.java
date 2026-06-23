@@ -68,7 +68,11 @@ public class OfferingAdminService {
                 currency,
                 request.requiresOnlinePayment()
         );
-        offering.replaceRequirements(toRequirements(request.requirements()));
+        offering.getRequirements().clear();
+        offerings.flush(); 
+        offering.getRequirements().addAll(toRequirements(request.requirements()));  // …antes de los INSERT
+        return OfferingResponse.from(offering);
+
         return OfferingResponse.from(offering);
     }
 

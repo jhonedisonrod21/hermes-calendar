@@ -190,6 +190,12 @@ public class BookingService {
         return appointments.findByTenantId(tenantId, pageable).map(AppointmentResponse::from);
     }
 
+    /** Estadísticas de citas del tenant en un rango de fechas de cita [from, to) (uso interno: reportes). */
+    @Transactional(readOnly = true)
+    public AppointmentStatsResponse statsForTenant(UUID tenantId, LocalDateTime from, LocalDateTime to) {
+        return AppointmentStatsResponse.of(tenantId, from, to, appointments.countByStatus(tenantId, from, to));
+    }
+
     @Transactional(readOnly = true)
     public AppointmentResponse getForTenant(UUID id, UUID tenantId) {
         return AppointmentResponse.from(appointments.findByIdAndTenantId(id, tenantId)

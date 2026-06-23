@@ -6,6 +6,7 @@ import io.swagger.v3.oas.annotations.enums.ParameterIn;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -13,11 +14,13 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
+import java.time.LocalDateTime;
 import java.util.UUID;
 
 /**
@@ -69,6 +72,20 @@ public class InternalAppointmentController {
             // La cita ya no puede confirmarse (p. ej. expirada): el llamante debe desistir, no reintentar.
             case NOT_CONFIRMABLE -> ResponseEntity.status(HttpStatus.CONFLICT).build();
         };
+    }
+
+    @GetMapping("/stats")
+    @Operation(summary = "Estadísticas de citas de un tenant en un periodo (uso interno)")
+    public AppointmentStatsResponse stats(
+            @Parameter(name = INTERNAL_KEY_HEADER, in = ParameterIn.HEADER, required = true,
+                    description = "Clave compartida para llamadas internas entre microservicios.")
+            @RequestHeader(name = INTERNAL_KEY_HEADER, required = false) String apiKey,
+            @RequestParam UUID tenantId,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime from,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime to
+    ) {
+        assertInternalKey(apiKey);
+        return booking.statsForTenant(tenantId, from, to);
     }
 
     private void assertInternalKey(String apiKey) {

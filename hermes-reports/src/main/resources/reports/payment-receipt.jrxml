@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Formato JRXML de JasperReports 7 (modelo Jackson: secciones con <element kind="..."/>). -->
+<jasperReport name="payment-receipt" pageWidth="595" pageHeight="842" columnWidth="535"
+              leftMargin="30" rightMargin="30" topMargin="30" bottomMargin="30">
+
+    <parameter name="TENANT_NAME" class="java.lang.String"/>
+    <parameter name="PAYMENT_ID" class="java.lang.String"/>
+    <parameter name="PAYMENT_DATE" class="java.lang.String"/>
+    <parameter name="STATUS" class="java.lang.String"/>
+    <parameter name="OFFERING_NAME" class="java.lang.String"/>
+    <parameter name="SLOT" class="java.lang.String"/>
+    <parameter name="CUSTOMER" class="java.lang.String"/>
+    <parameter name="PROVIDER" class="java.lang.String"/>
+    <parameter name="PROVIDER_REF" class="java.lang.String"/>
+    <parameter name="AMOUNT" class="java.lang.String"/>
+    <parameter name="CURRENCY" class="java.lang.String"/>
+    <parameter name="GENERATED_AT" class="java.lang.String"/>
+    <parameter name="LOGO_BASE64" class="java.lang.String"/>
+
+    <title height="470">
+        <element kind="image" x="475" y="0" width="60" height="60" scaleImage="RetainShape" onErrorType="Blank">
+            <expression><![CDATA[new java.io.ByteArrayInputStream(java.util.Base64.getDecoder().decode($P{LOGO_BASE64}))]]></expression>
+        </element>
+        <element kind="staticText" x="0" y="0" width="400" height="16" forecolor="#E0AA2C" fontSize="11.0" bold="true">
+            <text><![CDATA[HERMES CALENDAR]]></text>
+        </element>
+        <element kind="staticText" x="0" y="20" width="535" height="30" forecolor="#0D347A" fontSize="20.0" bold="true">
+            <text><![CDATA[COMPROBANTE DE PAGO]]></text>
+        </element>
+        <element kind="textField" x="0" y="52" width="535" height="16" forecolor="#4B5565" fontSize="11.0" blankWhenNull="true">
+            <expression><![CDATA["Establecimiento: " + $P{TENANT_NAME}]]></expression>
+        </element>
+        <element kind="line" x="0" y="76" width="535" height="1" forecolor="#CBD5E1"/>
+
+        <element kind="staticText" x="0" y="92" width="160" height="20" forecolor="#7A8599" fontSize="10.0"><text><![CDATA[N. de pago]]></text></element>
+        <element kind="textField" x="170" y="92" width="365" height="20" fontSize="10.0" bold="true" blankWhenNull="true"><expression><![CDATA[$P{PAYMENT_ID}]]></expression></element>
+
+        <element kind="staticText" x="0" y="116" width="160" height="20" forecolor="#7A8599" fontSize="10.0"><text><![CDATA[Fecha de pago]]></text></element>
+        <element kind="textField" x="170" y="116" width="365" height="20" fontSize="10.0" bold="true" blankWhenNull="true"><expression><![CDATA[$P{PAYMENT_DATE}]]></expression></element>
+
+        <element kind="staticText" x="0" y="140" width="160" height="20" forecolor="#7A8599" fontSize="10.0"><text><![CDATA[Estado]]></text></element>
+        <element kind="textField" x="170" y="140" width="365" height="20" fontSize="10.0" bold="true" blankWhenNull="true"><expression><![CDATA[$P{STATUS}]]></expression></element>
+
+        <element kind="staticText" x="0" y="164" width="160" height="20" forecolor="#7A8599" fontSize="10.0"><text><![CDATA[Servicio]]></text></element>
+        <element kind="textField" x="170" y="164" width="365" height="20" fontSize="10.0" bold="true" blankWhenNull="true"><expression><![CDATA[$P{OFFERING_NAME}]]></expression></element>
+
+        <element kind="staticText" x="0" y="188" width="160" height="20" forecolor="#7A8599" fontSize="10.0"><text><![CDATA[Fecha de la cita]]></text></element>
+        <element kind="textField" x="170" y="188" width="365" height="20" fontSize="10.0" bold="true" blankWhenNull="true"><expression><![CDATA[$P{SLOT}]]></expression></element>
+
+        <element kind="staticText" x="0" y="212" width="160" height="20" forecolor="#7A8599" fontSize="10.0"><text><![CDATA[Cliente]]></text></element>
+        <element kind="textField" x="170" y="212" width="365" height="20" fontSize="10.0" bold="true" blankWhenNull="true"><expression><![CDATA[$P{CUSTOMER}]]></expression></element>
+
+        <element kind="staticText" x="0" y="236" width="160" height="20" forecolor="#7A8599" fontSize="10.0"><text><![CDATA[Medio de pago]]></text></element>
+        <element kind="textField" x="170" y="236" width="365" height="20" fontSize="10.0" bold="true" blankWhenNull="true"><expression><![CDATA[$P{PROVIDER}]]></expression></element>
+
+        <element kind="staticText" x="0" y="260" width="160" height="20" forecolor="#7A8599" fontSize="10.0"><text><![CDATA[Referencia]]></text></element>
+        <element kind="textField" x="170" y="260" width="365" height="20" fontSize="10.0" bold="true" blankWhenNull="true"><expression><![CDATA[$P{PROVIDER_REF}]]></expression></element>
+
+        <element kind="line" x="0" y="296" width="535" height="1" forecolor="#CBD5E1"/>
+
+        <element kind="staticText" x="0" y="312" width="200" height="28" forecolor="#172033" fontSize="13.0" bold="true" vTextAlign="Middle"><text><![CDATA[IMPORTE PAGADO]]></text></element>
+        <element kind="textField" x="235" y="312" width="300" height="28" forecolor="#1F9D55" fontSize="18.0" bold="true" hTextAlign="Right" vTextAlign="Middle" blankWhenNull="true"><expression><![CDATA[$P{AMOUNT} + " " + $P{CURRENCY}]]></expression></element>
+
+        <element kind="textField" x="0" y="430" width="535" height="14" forecolor="#7A8599" fontSize="8.0" blankWhenNull="true"><expression><![CDATA["Documento generado automáticamente por Hermes Calendar el " + $P{GENERATED_AT} + ". Validez sujeta a la confirmación del pago por la pasarela."]]></expression></element>
+    </title>
+</jasperReport>

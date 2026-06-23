@@ -1,0 +1,29 @@
+// La extensión de PDF de JasperReports 7 depende del fork OpenPDF de Jaspersoft, que no está en
+// Maven Central sino en el artifactory de JasperReports. Se limita a ese grupo para que el resto
+// de dependencias se sigan resolviendo desde Central/mavenLocal.
+repositories {
+    maven {
+        url = uri('https://jaspersoft.jfrog.io/artifactory/third-party-ce-artifacts')
+        content { includeGroup 'com.github.librepdf' }
+    }
+}
+
+dependencies {
+    implementation 'org.springframework.cloud:spring-cloud-starter-config'
+    implementation 'org.springframework.boot:spring-boot-starter-web'
+    implementation 'org.springframework.cloud:spring-cloud-starter-netflix-eureka-client'
+    implementation 'org.springframework.boot:spring-boot-starter-security'
+    implementation 'org.springframework.boot:spring-boot-starter-oauth2-resource-server'
+    implementation 'org.springframework.boot:spring-boot-starter-validation'
+    implementation "org.springdoc:springdoc-openapi-starter-webmvc-ui:${springdocVersion}"
+    implementation 'org.springframework.boot:spring-boot-starter-actuator'
+
+    // Motor de reportes. 'jasperreports' es el core; 'jasperreports-jdt' aporta el compilador
+    // Eclipse JDT que compila las plantillas .jrxml en tiempo de ejecución (sin necesitar un JDK);
+    // 'jasperreports-pdf' es la extensión de exportación a PDF (modularizada aparte en JasperReports 7).
+    implementation 'net.sf.jasperreports:jasperreports:7.0.7'
+    implementation 'net.sf.jasperreports:jasperreports-jdt:7.0.7'
+    implementation 'net.sf.jasperreports:jasperreports-pdf:7.0.7'
+
+    testImplementation 'org.springframework.boot:spring-boot-starter-test'
+}

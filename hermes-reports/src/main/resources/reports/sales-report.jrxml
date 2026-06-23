@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Formato JRXML de JasperReports 7 (modelo Jackson: secciones con <element kind="..."/>). -->
+<jasperReport name="sales-report" pageWidth="595" pageHeight="842" columnWidth="535"
+              leftMargin="30" rightMargin="30" topMargin="30" bottomMargin="30">
+
+    <parameter name="TENANT_NAME" class="java.lang.String"/>
+    <parameter name="FROM" class="java.lang.String"/>
+    <parameter name="TO" class="java.lang.String"/>
+    <parameter name="GENERATED_AT" class="java.lang.String"/>
+    <parameter name="TOTAL_AMOUNT" class="java.lang.String"/>
+    <parameter name="CURRENCY" class="java.lang.String"/>
+    <parameter name="COUNT" class="java.lang.String"/>
+    <parameter name="LOGO_BASE64" class="java.lang.String"/>
+
+    <field name="date" class="java.lang.String"/>
+    <field name="paymentId" class="java.lang.String"/>
+    <field name="appointmentId" class="java.lang.String"/>
+    <field name="status" class="java.lang.String"/>
+    <field name="amount" class="java.lang.String"/>
+
+    <title height="92">
+        <element kind="image" x="485" y="0" width="50" height="50" scaleImage="RetainShape" onErrorType="Blank">
+            <expression><![CDATA[new java.io.ByteArrayInputStream(java.util.Base64.getDecoder().decode($P{LOGO_BASE64}))]]></expression>
+        </element>
+        <element kind="staticText" x="0" y="0" width="400" height="16" forecolor="#E0AA2C" fontSize="11.0" bold="true"><text><![CDATA[HERMES CALENDAR]]></text></element>
+        <element kind="staticText" x="0" y="20" width="535" height="28" forecolor="#0D347A" fontSize="19.0" bold="true"><text><![CDATA[INFORME DE VENTAS]]></text></element>
+        <element kind="textField" x="0" y="52" width="535" height="16" forecolor="#4B5565" fontSize="10.0" blankWhenNull="true"><expression><![CDATA["Establecimiento: " + $P{TENANT_NAME}]]></expression></element>
+        <element kind="textField" x="0" y="70" width="535" height="16" forecolor="#7A8599" fontSize="9.0" blankWhenNull="true"><expression><![CDATA["Periodo: " + $P{FROM} + " a " + $P{TO} + "   |   Generado: " + $P{GENERATED_AT}]]></expression></element>
+    </title>
+
+    <columnHeader height="22">
+        <element kind="staticText" x="0" y="0" width="90" height="22" backcolor="#EAF1FF" mode="Opaque" forecolor="#0D347A" fontSize="9.0" bold="true" vTextAlign="Middle"><text><![CDATA[ Fecha]]></text></element>
+        <element kind="staticText" x="90" y="0" width="150" height="22" backcolor="#EAF1FF" mode="Opaque" forecolor="#0D347A" fontSize="9.0" bold="true" vTextAlign="Middle"><text><![CDATA[ Pago]]></text></element>
+        <element kind="staticText" x="240" y="0" width="150" height="22" backcolor="#EAF1FF" mode="Opaque" forecolor="#0D347A" fontSize="9.0" bold="true" vTextAlign="Middle"><text><![CDATA[ Cita]]></text></element>
+        <element kind="staticText" x="390" y="0" width="75" height="22" backcolor="#EAF1FF" mode="Opaque" forecolor="#0D347A" fontSize="9.0" bold="true" vTextAlign="Middle"><text><![CDATA[ Estado]]></text></element>
+        <element kind="staticText" x="465" y="0" width="70" height="22" backcolor="#EAF1FF" mode="Opaque" forecolor="#0D347A" fontSize="9.0" bold="true" hTextAlign="Right" vTextAlign="Middle"><text><![CDATA[Importe ]]></text></element>
+    </columnHeader>
+
+    <detail>
+        <band height="18">
+            <element kind="textField" x="0" y="0" width="90" height="18" fontSize="8.0" vTextAlign="Middle" blankWhenNull="true"><expression><![CDATA[" " + $F{date}]]></expression></element>
+            <element kind="textField" x="90" y="0" width="150" height="18" fontSize="7.0" vTextAlign="Middle" blankWhenNull="true"><expression><![CDATA[" " + $F{paymentId}]]></expression></element>
+            <element kind="textField" x="240" y="0" width="150" height="18" fontSize="7.0" vTextAlign="Middle" blankWhenNull="true"><expression><![CDATA[" " + $F{appointmentId}]]></expression></element>
+            <element kind="textField" x="390" y="0" width="75" height="18" fontSize="8.0" vTextAlign="Middle" blankWhenNull="true"><expression><![CDATA[" " + $F{status}]]></expression></element>
+            <element kind="textField" x="465" y="0" width="70" height="18" fontSize="8.0" bold="true" hTextAlign="Right" vTextAlign="Middle" blankWhenNull="true"><expression><![CDATA[$F{amount} + " "]]></expression></element>
+            <element kind="line" x="0" y="17" width="535" height="1" forecolor="#E3E8F0"/>
+        </band>
+    </detail>
+
+    <summary height="60">
+        <element kind="line" x="0" y="6" width="535" height="1" forecolor="#CBD5E1"/>
+        <element kind="textField" x="0" y="14" width="300" height="20" forecolor="#7A8599" fontSize="10.0" vTextAlign="Middle" blankWhenNull="true"><expression><![CDATA["Pagos cobrados: " + $P{COUNT}]]></expression></element>
+        <element kind="staticText" x="300" y="14" width="120" height="20" forecolor="#172033" fontSize="11.0" bold="true" hTextAlign="Right" vTextAlign="Middle"><text><![CDATA[TOTAL]]></text></element>
+        <element kind="textField" x="420" y="14" width="115" height="20" forecolor="#1F9D55" fontSize="12.0" bold="true" hTextAlign="Right" vTextAlign="Middle" blankWhenNull="true"><expression><![CDATA[$P{TOTAL_AMOUNT} + " " + $P{CURRENCY}]]></expression></element>
+    </summary>
+</jasperReport>
