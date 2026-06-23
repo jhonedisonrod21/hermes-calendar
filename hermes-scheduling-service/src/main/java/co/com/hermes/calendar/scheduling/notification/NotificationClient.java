@@ -22,7 +22,7 @@ public class NotificationClient {
     private static final Logger log = LoggerFactory.getLogger(NotificationClient.class);
     private static final String INTERNAL_KEY_HEADER = "X-Hermes-Internal-Key";
 
-    public enum AppointmentEventType { CONFIRMED, CANCELLED, RESCHEDULED }
+    public enum AppointmentEventType { CONFIRMED, CANCELLED, RESCHEDULED, EXPIRED }
 
     private final RestClient notification;
     private final String internalApiKey;

@@ -158,8 +158,18 @@ public class BookingService {
     public int expireStalePendingPayments(Duration ttl) {
         OffsetDateTime cutoff = OffsetDateTime.now().minus(ttl);
         List<Appointment> stale = appointments.findByStatusAndCreatedAtBefore(AppointmentStatus.PENDING_PAYMENT, cutoff);
-        stale.forEach(a -> a.changeStatus(AppointmentStatus.EXPIRED));
+        stale.forEach(a -> {
+            a.changeStatus(AppointmentStatus.EXPIRED);
+            // Avisar al cliente que perdió el cupo por falta de pago (best-effort).
+            notificationClient.emitAppointmentEvent(NotificationClient.AppointmentEventType.EXPIRED,
+                    a.getId(), a.getCustomerUserId(), null, a.getSlotStart());
+        });
         return stale.size();
+    }
+
+    @Transactional(readOnly = true)
+    public Page<AppointmentResponse> listForCustomer(UUID customerUserId, Pageable pageable) {
+        return appointments.findByCustomerUserId(customerUserId, pageable).map(AppointmentResponse::from);
     }
 
     @Transactional(readOnly = true)
@@ -178,6 +188,12 @@ public class BookingService {
     @Transactional(readOnly = true)
     public Page<AppointmentResponse> listForTenant(UUID tenantId, Pageable pageable) {
         return appointments.findByTenantId(tenantId, pageable).map(AppointmentResponse::from);
+    }
+
+    @Transactional(readOnly = true)
+    public AppointmentResponse getForTenant(UUID id, UUID tenantId) {
+        return AppointmentResponse.from(appointments.findByIdAndTenantId(id, tenantId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Appointment not found")));
     }
 
     @Transactional

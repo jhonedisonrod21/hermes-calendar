@@ -43,6 +43,12 @@ public class TenantAppointmentController {
         return booking.listForTenant(callerTenant(jwt), pageable);
     }
 
+    @GetMapping("/{id}")
+    @Operation(summary = "Detalle de una cita de mi establecimiento")
+    public AppointmentResponse get(@AuthenticationPrincipal Jwt jwt, @PathVariable UUID id) {
+        return booking.getForTenant(id, callerTenant(jwt));
+    }
+
     @PostMapping("/{id}/cancel")
     @Operation(summary = "Cancela una cita de mi establecimiento")
     public AppointmentResponse cancel(@AuthenticationPrincipal Jwt jwt, @PathVariable UUID id) {

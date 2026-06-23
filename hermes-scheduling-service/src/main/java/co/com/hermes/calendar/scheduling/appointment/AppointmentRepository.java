@@ -21,6 +21,9 @@ public interface AppointmentRepository extends JpaRepository<Appointment, UUID> 
 
     Page<Appointment> findByTenantId(UUID tenantId, Pageable pageable);
 
+    /** Citas de un cliente (para su pantalla "mis citas"). */
+    Page<Appointment> findByCustomerUserId(UUID customerUserId, Pageable pageable);
+
     Optional<Appointment> findByIdAndTenantId(UUID id, UUID tenantId);
 
     Optional<Appointment> findByIdAndCustomerUserId(UUID id, UUID customerUserId);

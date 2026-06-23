@@ -54,6 +54,13 @@ public class AppointmentController {
         return booking.book(callerUserId(jwt), request);
     }
 
+    @GetMapping("/appointments")
+    @Operation(summary = "Lista mis citas")
+    public org.springframework.data.domain.Page<AppointmentResponse> myAppointments(
+            @AuthenticationPrincipal Jwt jwt, org.springframework.data.domain.Pageable pageable) {
+        return booking.listForCustomer(callerUserId(jwt), pageable);
+    }
+
     @GetMapping("/appointments/{id}")
     @Operation(summary = "Consulta una cita propia")
     public AppointmentResponse get(@AuthenticationPrincipal Jwt jwt, @PathVariable UUID id) {
