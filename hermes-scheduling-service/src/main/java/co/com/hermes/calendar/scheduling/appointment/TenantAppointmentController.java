@@ -62,6 +62,18 @@ public class TenantAppointmentController {
         return booking.rescheduleByTenant(id, callerTenant(jwt), request.newSlotStart());
     }
 
+    @PostMapping("/{id}/complete")
+    @Operation(summary = "Da por finalizada (COMPLETED) una cita confirmada de mi establecimiento")
+    public AppointmentResponse complete(@AuthenticationPrincipal Jwt jwt, @PathVariable UUID id) {
+        return booking.completeByTenant(id, callerTenant(jwt));
+    }
+
+    @PostMapping("/{id}/no-show")
+    @Operation(summary = "Marca como no presentado (NO_SHOW) al cliente de una cita confirmada")
+    public AppointmentResponse noShow(@AuthenticationPrincipal Jwt jwt, @PathVariable UUID id) {
+        return booking.markNoShowByTenant(id, callerTenant(jwt));
+    }
+
     private static UUID callerTenant(Jwt jwt) {
         String tenantId = jwt.getClaimAsString("tenant_id");
         if (tenantId == null || tenantId.isBlank()) {

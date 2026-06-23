@@ -213,6 +213,41 @@ public class BookingService {
         return AppointmentResponse.from(appointment);
     }
 
+    /** El establecimiento da por atendida la cita: CONFIRMED -> COMPLETED. */
+    @Transactional
+    public AppointmentResponse completeByTenant(UUID id, UUID tenantId) {
+        Appointment appointment = appointments.findByIdAndTenantId(id, tenantId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Appointment not found"));
+        return closeAs(appointment, AppointmentStatus.COMPLETED);
+    }
+
+    /** El establecimiento marca que el cliente no se presentó: CONFIRMED -> NO_SHOW. */
+    @Transactional
+    public AppointmentResponse markNoShowByTenant(UUID id, UUID tenantId) {
+        Appointment appointment = appointments.findByIdAndTenantId(id, tenantId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Appointment not found"));
+        return closeAs(appointment, AppointmentStatus.NO_SHOW);
+    }
+
+    /**
+     * Cierra una cita en un estado terminal (COMPLETED / NO_SHOW). Solo es válido desde CONFIRMED:
+     * una cita pendiente de pago, cancelada o expirada no puede cerrarse así. Idempotente cuando ya
+     * está en el estado destino (tolera reintentos del personal); cualquier otra transición es 409.
+     * Al dejar de retener el cupo (holdsSlot=false), la columna generada de cupo activo queda NULL.
+     */
+    private AppointmentResponse closeAs(Appointment appointment, AppointmentStatus target) {
+        AppointmentStatus current = appointment.getStatus();
+        if (current == target) {
+            return AppointmentResponse.from(appointment);
+        }
+        if (current != AppointmentStatus.CONFIRMED) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT,
+                    "Only a CONFIRMED appointment can be marked as " + target);
+        }
+        appointment.changeStatus(target);
+        return AppointmentResponse.from(appointment);
+    }
+
     private static List<AppointmentRequirementValue> collectRequirementValues(OfferingSnapshot offering, Map<String, String> provided) {
         Map<String, String> values = provided == null ? Map.of() : provided;
         List<OfferingSnapshot.Requirement> requirements = offering.requirements() == null ? List.of() : offering.requirements();

@@ -184,6 +184,60 @@ class BookingServiceTest {
     }
 
     @Test
+    void completeMovesConfirmedToCompleted() {
+        UUID apptId = UUID.randomUUID();
+        Appointment appointment = confirmed(apptId);
+        when(appointments.findByIdAndTenantId(apptId, tenantId)).thenReturn(Optional.of(appointment));
+
+        AppointmentResponse response = service.completeByTenant(apptId, tenantId);
+
+        assertThat(response.status()).isEqualTo(AppointmentStatus.COMPLETED);
+        assertThat(appointment.getStatus()).isEqualTo(AppointmentStatus.COMPLETED);
+    }
+
+    @Test
+    void noShowMovesConfirmedToNoShow() {
+        UUID apptId = UUID.randomUUID();
+        Appointment appointment = confirmed(apptId);
+        when(appointments.findByIdAndTenantId(apptId, tenantId)).thenReturn(Optional.of(appointment));
+
+        AppointmentResponse response = service.markNoShowByTenant(apptId, tenantId);
+
+        assertThat(response.status()).isEqualTo(AppointmentStatus.NO_SHOW);
+    }
+
+    @Test
+    void completeIsIdempotentWhenAlreadyCompleted() {
+        UUID apptId = UUID.randomUUID();
+        Appointment appointment = Appointment.book(apptId, tenantId, offeringId, userId, slotStart, slotStart.plusMinutes(30),
+                AppointmentStatus.COMPLETED, null, null, false, List.of());
+        when(appointments.findByIdAndTenantId(apptId, tenantId)).thenReturn(Optional.of(appointment));
+
+        assertThat(service.completeByTenant(apptId, tenantId).status()).isEqualTo(AppointmentStatus.COMPLETED);
+    }
+
+    @Test
+    void completeRejectsPendingPaymentAppointment() {
+        UUID apptId = UUID.randomUUID();
+        when(appointments.findByIdAndTenantId(apptId, tenantId)).thenReturn(Optional.of(pending(apptId)));
+
+        assertThatThrownBy(() -> service.completeByTenant(apptId, tenantId))
+                .isInstanceOf(ResponseStatusException.class)
+                .extracting("statusCode").isEqualTo(HttpStatus.CONFLICT);
+    }
+
+    @Test
+    void completeRejectsAppointmentOfAnotherTenant() {
+        UUID apptId = UUID.randomUUID();
+        UUID otherTenant = UUID.randomUUID();
+        when(appointments.findByIdAndTenantId(apptId, otherTenant)).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> service.completeByTenant(apptId, otherTenant))
+                .isInstanceOf(ResponseStatusException.class)
+                .extracting("statusCode").isEqualTo(HttpStatus.NOT_FOUND);
+    }
+
+    @Test
     void capturesProvidedAnnex() {
         OfferingSnapshot offering = offering(false,
                 List.of(new OfferingSnapshot.Requirement("vehicle_plate", "Matricula", "TEXT", true)));
