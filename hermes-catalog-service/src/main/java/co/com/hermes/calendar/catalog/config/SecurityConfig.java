@@ -32,7 +32,11 @@ public class SecurityConfig {
                                 "/internal/**",
                                 "/v3/api-docs/**",
                                 "/swagger-ui.html",
-                                "/swagger-ui/**"
+                                "/swagger-ui/**",
+                                // Búsqueda y detalle público de servicios: accesible sin autenticación
+                                // (vitrina pública del catálogo). El gateway también lo deja público.
+                                "/search",
+                                "/search/**"
                         ).permitAll()
                         .anyRequest().authenticated()
                 )
