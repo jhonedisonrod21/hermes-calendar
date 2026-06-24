@@ -31,12 +31,17 @@ public class ReceiptReportService {
         this.engine = engine;
     }
 
-    /** Genera el PDF del comprobante de un pago, validando que pertenezca al tenant que lo solicita. */
-    public byte[] generate(UUID paymentId, UUID callerTenantId, String generatedAt) {
+    /**
+     * Genera el PDF del comprobante de un pago. Lo puede pedir el cliente dueño del pago (GUEST_USER)
+     * o un operador de su establecimiento; el tenant del llamante puede ser {@code null} (cliente).
+     */
+    public byte[] generate(UUID paymentId, UUID callerUserId, UUID callerTenantId, String generatedAt) {
         PaymentDetail payment = paymentClient.findPayment(paymentId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Pago no encontrado"));
-        // Anti-IDOR: el pago debe ser del establecimiento que pide el comprobante.
-        if (!callerTenantId.equals(payment.tenantId())) {
+        // Anti-IDOR: el comprobante es del cliente que pagó o del establecimiento que lo cobró.
+        boolean isOwner = callerUserId != null && callerUserId.equals(payment.customerUserId());
+        boolean isOperator = callerTenantId != null && callerTenantId.equals(payment.tenantId());
+        if (!isOwner && !isOperator) {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Pago no encontrado");
         }
 

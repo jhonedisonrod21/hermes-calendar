@@ -33,7 +33,6 @@ import java.util.UUID;
  */
 @RestController
 @RequestMapping
-@PreAuthorize("hasAnyRole('TENANT_ADMIN','TENANT_PARTNER')")
 @Tag(name = "Reportes", description = "Generación de reportes en PDF (comprobante, ventas, estadísticas).")
 @SecurityRequirement(name = "bearer-jwt")
 public class ReportController {
@@ -52,13 +51,15 @@ public class ReportController {
     }
 
     @GetMapping("/payments/{paymentId}/receipt")
-    @Operation(summary = "Comprobante de pago (PDF) de un pago de mi establecimiento")
+    @PreAuthorize("isAuthenticated()")
+    @Operation(summary = "Comprobante de pago (PDF): del dueño del pago (cliente) o de su establecimiento")
     public ResponseEntity<byte[]> paymentReceipt(@AuthenticationPrincipal Jwt jwt, @PathVariable UUID paymentId) {
-        byte[] pdf = receiptService.generate(paymentId, callerTenant(jwt), now());
+        byte[] pdf = receiptService.generate(paymentId, callerUserId(jwt), callerTenantOrNull(jwt), now());
         return pdf(pdf, "comprobante-" + paymentId + ".pdf");
     }
 
     @GetMapping("/sales")
+    @PreAuthorize("hasAnyAuthority('calendar:read','calendar:write')")
     @Operation(summary = "Informe de ventas (PDF) de mi establecimiento en un periodo")
     public ResponseEntity<byte[]> sales(
             @AuthenticationPrincipal Jwt jwt,
@@ -70,6 +71,7 @@ public class ReportController {
     }
 
     @GetMapping("/statistics")
+    @PreAuthorize("hasAnyAuthority('calendar:read','calendar:write')")
     @Operation(summary = "Estadísticas (PDF) de mi establecimiento en un periodo")
     public ResponseEntity<byte[]> statistics(
             @AuthenticationPrincipal Jwt jwt,
@@ -103,14 +105,36 @@ public class ReportController {
     }
 
     private static UUID callerTenant(Jwt jwt) {
+        UUID tenantId = callerTenantOrNull(jwt);
+        if (tenantId == null) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "No tenant context in token");
+        }
+        return tenantId;
+    }
+
+    /** Tenant del token, o {@code null} si el llamante no tiene contexto de organización (p. ej. GUEST_USER). */
+    private static UUID callerTenantOrNull(Jwt jwt) {
         String tenantId = jwt.getClaimAsString("tenant_id");
         if (tenantId == null || tenantId.isBlank()) {
-            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "No tenant context in token");
+            return null;
         }
         try {
             return UUID.fromString(tenantId);
         } catch (IllegalArgumentException ex) {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Invalid tenant context");
+        }
+    }
+
+    /** Usuario del llamante, del token (claim user_id, con fallback a sub). */
+    private static UUID callerUserId(Jwt jwt) {
+        String userId = jwt.getClaimAsString("user_id");
+        if (userId == null || userId.isBlank()) {
+            userId = jwt.getSubject();
+        }
+        try {
+            return UUID.fromString(userId);
+        } catch (IllegalArgumentException ex) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Invalid user context");
         }
     }
 }
