@@ -23,6 +23,7 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.time.LocalDate;
+import java.time.ZoneOffset;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.UUID;
@@ -92,7 +93,7 @@ public class ReportController {
 
     /** Rango por defecto: del primer día del mes actual a hoy. */
     private static LocalDate[] range(LocalDate from, LocalDate to) {
-        LocalDate end = to != null ? to : LocalDate.now();
+        LocalDate end = to != null ? to : LocalDate.now(ZoneOffset.UTC);
         LocalDate start = from != null ? from : end.withDayOfMonth(1);
         if (start.isAfter(end)) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "'from' no puede ser posterior a 'to'");
@@ -101,7 +102,7 @@ public class ReportController {
     }
 
     private static String now() {
-        return LocalDateTime.now().format(STAMP);
+        return LocalDateTime.now(ZoneOffset.UTC).format(STAMP);
     }
 
     private static UUID callerTenant(Jwt jwt) {
@@ -120,7 +121,7 @@ public class ReportController {
         }
         try {
             return UUID.fromString(tenantId);
-        } catch (IllegalArgumentException ex) {
+        } catch (IllegalArgumentException _) {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Invalid tenant context");
         }
     }
@@ -133,7 +134,7 @@ public class ReportController {
         }
         try {
             return UUID.fromString(userId);
-        } catch (IllegalArgumentException ex) {
+        } catch (IllegalArgumentException _) {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Invalid user context");
         }
     }

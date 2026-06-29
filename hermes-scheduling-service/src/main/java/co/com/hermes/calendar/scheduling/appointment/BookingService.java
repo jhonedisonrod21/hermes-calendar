@@ -13,6 +13,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.time.Duration;
+import java.time.ZoneOffset;
 import java.time.LocalDateTime;
 import java.time.OffsetDateTime;
 import java.util.ArrayList;
@@ -27,7 +28,7 @@ import java.util.UUID;
 @Service
 public class BookingService {
 
-    private static final List<AppointmentStatus> ACTIVE = List.of(AppointmentStatus.PENDING_PAYMENT, AppointmentStatus.CONFIRMED);
+    private static final String APPOINTMENT_NOT_FOUND = "Appointment not found";
 
     private final CatalogClient catalogClient;
     private final AvailabilityService availability;
@@ -67,9 +68,12 @@ public class BookingService {
                 : AppointmentStatus.CONFIRMED;
 
         Appointment appointment = Appointment.book(
-                UUID.randomUUID(), offering.tenantId(), offering.id(), customerUserId,
-                slotStart, slotStart.plusMinutes(offering.durationMinutes()), status,
-                offering.priceAmount(), offering.priceCurrency(), offering.requiresOnlinePayment(), collected.values());
+                UUID.randomUUID(),
+                new Appointment.BookingRefs(offering.tenantId(), offering.id(), customerUserId),
+                new Appointment.SlotRange(slotStart, slotStart.plusMinutes(offering.durationMinutes())),
+                status,
+                new Appointment.Pricing(offering.priceAmount(), offering.priceCurrency(), offering.requiresOnlinePayment()),
+                collected.values());
         try {
             Appointment saved = appointments.saveAndFlush(appointment);
             // Fija los anexos de archivo (PENDING) a la cita ya creada. Si algo falla, la tx revierte la cita.
@@ -82,7 +86,7 @@ public class BookingService {
                         saved.getId(), saved.getCustomerUserId(), offering.name(), saved.getSlotStart());
             }
             return AppointmentResponse.from(saved);
-        } catch (DataIntegrityViolationException ex) {
+        } catch (DataIntegrityViolationException _) {
             // Carrera por el mismo cupo: el índice único de cupo activo lo impide.
             throw new ResponseStatusException(HttpStatus.CONFLICT, "Slot was just taken");
         }
@@ -91,14 +95,14 @@ public class BookingService {
     @Transactional
     public AppointmentResponse rescheduleByCustomer(UUID id, UUID customerUserId, LocalDateTime newSlotStart) {
         Appointment appointment = appointments.findByIdAndCustomerUserId(id, customerUserId)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Appointment not found"));
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, APPOINTMENT_NOT_FOUND));
         return reschedule(appointment, newSlotStart);
     }
 
     @Transactional
     public AppointmentResponse rescheduleByTenant(UUID id, UUID tenantId, LocalDateTime newSlotStart) {
         Appointment appointment = appointments.findByIdAndTenantId(id, tenantId)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Appointment not found"));
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, APPOINTMENT_NOT_FOUND));
         return reschedule(appointment, newSlotStart);
     }
 
@@ -122,7 +126,7 @@ public class BookingService {
             notificationClient.emitAppointmentEvent(NotificationClient.AppointmentEventType.RESCHEDULED,
                     saved.getId(), saved.getCustomerUserId(), offering.name(), saved.getSlotStart());
             return AppointmentResponse.from(saved);
-        } catch (DataIntegrityViolationException ex) {
+        } catch (DataIntegrityViolationException _) {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "Slot was just taken");
         }
     }
@@ -133,7 +137,7 @@ public class BookingService {
     @Transactional(readOnly = true)
     public AppointmentSnapshot snapshot(UUID id) {
         return AppointmentSnapshot.from(appointments.findById(id)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Appointment not found")));
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, APPOINTMENT_NOT_FOUND)));
     }
 
     /**
@@ -144,7 +148,7 @@ public class BookingService {
     @Transactional
     public ConfirmationResult confirmPayment(UUID id) {
         Appointment appointment = appointments.findById(id)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Appointment not found"));
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, APPOINTMENT_NOT_FOUND));
         return switch (appointment.getStatus()) {
             case PENDING_PAYMENT -> {
                 appointment.changeStatus(AppointmentStatus.CONFIRMED);
@@ -164,7 +168,7 @@ public class BookingService {
      */
     @Transactional
     public int expireStalePendingPayments(Duration ttl) {
-        OffsetDateTime cutoff = OffsetDateTime.now().minus(ttl);
+        OffsetDateTime cutoff = OffsetDateTime.now(ZoneOffset.UTC).minus(ttl);
         List<Appointment> stale = appointments.findByStatusAndCreatedAtBefore(AppointmentStatus.PENDING_PAYMENT, cutoff);
         stale.forEach(a -> {
             a.changeStatus(AppointmentStatus.EXPIRED);
@@ -183,13 +187,13 @@ public class BookingService {
     @Transactional(readOnly = true)
     public AppointmentResponse getForCustomer(UUID id, UUID customerUserId) {
         return AppointmentResponse.from(appointments.findByIdAndCustomerUserId(id, customerUserId)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Appointment not found")));
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, APPOINTMENT_NOT_FOUND)));
     }
 
     @Transactional
     public AppointmentResponse cancelByCustomer(UUID id, UUID customerUserId) {
         Appointment appointment = appointments.findByIdAndCustomerUserId(id, customerUserId)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Appointment not found"));
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, APPOINTMENT_NOT_FOUND));
         return cancel(appointment);
     }
 
@@ -210,7 +214,7 @@ public class BookingService {
         if (from == null || to == null || !from.isBefore(to)) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid range: 'from' must be before 'to'");
         }
-        if (Duration.between(from, to).compareTo(MAX_CALENDAR_WINDOW) > 0) {
+        if (Duration.between(from.atOffset(ZoneOffset.UTC), to.atOffset(ZoneOffset.UTC)).compareTo(MAX_CALENDAR_WINDOW) > 0) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Range too wide (max 62 days)");
         }
         return appointments.findByTenantIdAndSlotStartGreaterThanEqualAndSlotStartLessThan(tenantId, from, to)
@@ -226,13 +230,13 @@ public class BookingService {
     @Transactional(readOnly = true)
     public AppointmentResponse getForTenant(UUID id, UUID tenantId) {
         return AppointmentResponse.from(appointments.findByIdAndTenantId(id, tenantId)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Appointment not found")));
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, APPOINTMENT_NOT_FOUND)));
     }
 
     @Transactional
     public AppointmentResponse cancelByTenant(UUID id, UUID tenantId) {
         Appointment appointment = appointments.findByIdAndTenantId(id, tenantId)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Appointment not found"));
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, APPOINTMENT_NOT_FOUND));
         return cancel(appointment);
     }
 
@@ -250,7 +254,7 @@ public class BookingService {
     @Transactional
     public AppointmentResponse completeByTenant(UUID id, UUID tenantId) {
         Appointment appointment = appointments.findByIdAndTenantId(id, tenantId)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Appointment not found"));
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, APPOINTMENT_NOT_FOUND));
         return closeAs(appointment, AppointmentStatus.COMPLETED);
     }
 
@@ -258,7 +262,7 @@ public class BookingService {
     @Transactional
     public AppointmentResponse markNoShowByTenant(UUID id, UUID tenantId) {
         Appointment appointment = appointments.findByIdAndTenantId(id, tenantId)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Appointment not found"));
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, APPOINTMENT_NOT_FOUND));
         return closeAs(appointment, AppointmentStatus.NO_SHOW);
     }
 
@@ -324,7 +328,7 @@ public class BookingService {
     private static UUID parseFileId(String raw, String reqKey) {
         try {
             return UUID.fromString(raw);
-        } catch (IllegalArgumentException ex) {
+        } catch (IllegalArgumentException _) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid file reference for requirement: " + reqKey);
         }
     }

@@ -14,6 +14,7 @@ import jakarta.persistence.Table;
 
 import java.math.BigDecimal;
 import java.time.OffsetDateTime;
+import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
@@ -77,70 +78,60 @@ public class Offering {
     protected Offering() {
     }
 
-    public static Offering create(
-            UUID id,
-            CallerTenant tenant,
-            String name,
-            String description,
-            String category,
-            int durationMinutes,
-            Modality modality,
-            BigDecimal priceAmount,
-            String priceCurrency,
-            boolean requiresOnlinePayment
-    ) {
+    /** Atributos descriptivos del servicio (salvo identidad, tenant y precio). */
+    public record OfferingDetails(String name, String description, String category, int durationMinutes,
+                                  Modality modality) {
+    }
+
+    /** Precio y modalidad de cobro del servicio. */
+    public record Pricing(BigDecimal priceAmount, String priceCurrency, boolean requiresOnlinePayment) {
+    }
+
+    public static Offering create(UUID id, CallerTenant tenant, OfferingDetails details, Pricing pricing) {
         Offering offering = new Offering();
         offering.id = id;
         offering.tenantId = tenant.id();
         offering.tenantSlug = tenant.slug();
         offering.tenantName = tenant.name();
-        offering.name = name;
-        offering.description = description;
-        offering.category = category;
-        offering.durationMinutes = durationMinutes;
-        offering.modality = modality;
-        offering.priceAmount = priceAmount;
-        offering.priceCurrency = priceCurrency;
-        offering.requiresOnlinePayment = requiresOnlinePayment;
+        offering.applyDetails(details);
+        offering.applyPricing(pricing);
         offering.active = true;
-        offering.createdAt = OffsetDateTime.now();
+        offering.createdAt = OffsetDateTime.now(ZoneOffset.UTC);
         offering.updatedAt = offering.createdAt;
         return offering;
     }
 
-    public void update(
-            CallerTenant tenant,
-            String name,
-            String description,
-            String category,
-            int durationMinutes,
-            Modality modality,
-            BigDecimal priceAmount,
-            String priceCurrency,
-            boolean requiresOnlinePayment
-    ) {
+    private void applyDetails(OfferingDetails details) {
+        this.name = details.name();
+        this.description = details.description();
+        this.category = details.category();
+        this.durationMinutes = details.durationMinutes();
+        this.modality = details.modality();
+    }
+
+    private void applyPricing(Pricing pricing) {
+        this.priceAmount = pricing.priceAmount();
+        this.priceCurrency = pricing.priceCurrency();
+        this.requiresOnlinePayment = pricing.requiresOnlinePayment();
+    }
+
+    public void update(CallerTenant tenant, OfferingDetails details, Pricing pricing) {
         this.tenantSlug = tenant.slug();
         this.tenantName = tenant.name();
-        this.name = name;
-        this.description = description;
-        this.category = category;
-        this.durationMinutes = durationMinutes;
-        this.modality = modality;
-        this.priceAmount = priceAmount;
-        this.priceCurrency = priceCurrency;
-        this.requiresOnlinePayment = requiresOnlinePayment;
-        this.updatedAt = OffsetDateTime.now();
+        applyDetails(details);
+        applyPricing(pricing);
+        this.updatedAt = OffsetDateTime.now(ZoneOffset.UTC);
     }
 
     public void replaceRequirements(List<OfferingRequirement> newRequirements) {
         this.requirements.clear();
         this.requirements.addAll(newRequirements);
-        this.updatedAt = OffsetDateTime.now();
+        this.updatedAt = OffsetDateTime.now(ZoneOffset.UTC);
     }
 
     public void changeActive(boolean active) {
         this.active = active;
-        this.updatedAt = OffsetDateTime.now();
+        this.updatedAt = OffsetDateTime.now(ZoneOffset.UTC);
     }
 
     public UUID getId() {

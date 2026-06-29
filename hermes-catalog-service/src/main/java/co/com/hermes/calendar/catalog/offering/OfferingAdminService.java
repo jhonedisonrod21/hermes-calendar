@@ -30,14 +30,9 @@ public class OfferingAdminService {
         Offering offering = Offering.create(
                 UUID.randomUUID(),
                 tenant,
-                request.name().trim(),
-                request.description(),
-                request.category(),
-                request.durationMinutes(),
-                request.modality(),
-                request.priceAmount(),
-                currency,
-                request.requiresOnlinePayment()
+                new Offering.OfferingDetails(request.name().trim(), request.description(), request.category(),
+                        request.durationMinutes(), request.modality()),
+                new Offering.Pricing(request.priceAmount(), currency, request.requiresOnlinePayment())
         );
         offering.replaceRequirements(toRequirements(request.requirements()));
         return OfferingResponse.from(offerings.save(offering));
@@ -59,14 +54,9 @@ public class OfferingAdminService {
         String currency = normalizedCurrency(request);
         offering.update(
                 tenant,
-                request.name().trim(),
-                request.description(),
-                request.category(),
-                request.durationMinutes(),
-                request.modality(),
-                request.priceAmount(),
-                currency,
-                request.requiresOnlinePayment()
+                new Offering.OfferingDetails(request.name().trim(), request.description(), request.category(),
+                        request.durationMinutes(), request.modality()),
+                new Offering.Pricing(request.priceAmount(), currency, request.requiresOnlinePayment())
         );
         offering.getRequirements().clear();
         offerings.flush();

@@ -9,7 +9,7 @@ import jakarta.validation.constraints.Size;
 
 @Schema(description = "Anexo/dato exigido al reservar el servicio.")
 public record RequirementDto(
-        @NotBlank @Size(max = 80) @Pattern(regexp = "[a-zA-Z0-9_]+", message = "key must be alphanumeric/underscore")
+        @NotBlank @Size(max = 80) @Pattern(regexp = "\\w+", message = "key must be alphanumeric/underscore")
         @Schema(example = "vehicle_plate") String key,
         @NotBlank @Size(max = 160) @Schema(example = "Matricula del vehiculo") String label,
         @NotNull @Schema(example = "TEXT") RequirementType type,

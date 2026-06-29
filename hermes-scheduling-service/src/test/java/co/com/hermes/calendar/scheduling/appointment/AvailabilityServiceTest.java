@@ -8,6 +8,7 @@ import co.com.hermes.calendar.scheduling.schedule.ScheduleExceptionRepository;
 import org.junit.jupiter.api.Test;
 
 import java.time.LocalDate;
+import java.time.Month;
 import java.time.LocalTime;
 import java.util.List;
 import java.util.Optional;
@@ -29,7 +30,7 @@ class AvailabilityServiceTest {
 
     private final UUID offeringId = UUID.randomUUID();
     private final UUID tenantId = UUID.randomUUID();
-    private final LocalDate date = LocalDate.of(2026, 7, 1);
+    private final LocalDate date = LocalDate.of(2026, Month.JULY, 1);
 
     private OfferingSnapshot offering(int duration) {
         return new OfferingSnapshot(offeringId, tenantId, "Cita", duration, "IN_PERSON", null, null, false, true, List.of());

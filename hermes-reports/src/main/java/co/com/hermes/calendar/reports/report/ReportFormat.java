@@ -11,14 +11,14 @@ import java.util.Locale;
 /** Formateo de importes y fechas para los reportes (estilo es-CO: miles con '.', decimales con ','). */
 final class ReportFormat {
 
-    private static final DateTimeFormatter DATE = DateTimeFormatter.ofPattern("yyyy-MM-dd", new Locale("es", "CO"));
-    private static final DateTimeFormatter DATE_TIME = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm", new Locale("es", "CO"));
+    private static final DateTimeFormatter DATE = DateTimeFormatter.ofPattern("yyyy-MM-dd", Locale.of("es", "CO"));
+    private static final DateTimeFormatter DATE_TIME = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm", Locale.of("es", "CO"));
 
     private ReportFormat() {
     }
 
     static String money(BigDecimal amount) {
-        DecimalFormatSymbols symbols = new DecimalFormatSymbols(new Locale("es", "CO"));
+        DecimalFormatSymbols symbols = new DecimalFormatSymbols(Locale.of("es", "CO"));
         symbols.setGroupingSeparator('.');
         symbols.setDecimalSeparator(',');
         return new DecimalFormat("#,##0.00", symbols).format(amount == null ? BigDecimal.ZERO : amount);

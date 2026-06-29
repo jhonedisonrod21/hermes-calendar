@@ -55,7 +55,8 @@ class OfferingAdminServiceTest {
 
     @Test
     void rejectsOnlinePaymentWithoutPrice() {
-        assertThatThrownBy(() -> service.create(caller, request(true, null, null)))
+        var request = request(true, null, null);
+        assertThatThrownBy(() -> service.create(caller, request))
                 .isInstanceOf(ResponseStatusException.class)
                 .extracting("statusCode").isEqualTo(HttpStatus.BAD_REQUEST);
     }
@@ -73,7 +74,9 @@ class OfferingAdminServiceTest {
     @Test
     void deactivatesOffering() {
         UUID id = UUID.randomUUID();
-        Offering offering = Offering.create(id, caller, "X", null, null, 30, Modality.VIRTUAL, null, null, false);
+        Offering offering = Offering.create(id, caller,
+                new Offering.OfferingDetails("X", null, null, 30, Modality.VIRTUAL),
+                new Offering.Pricing(null, null, false));
         when(offerings.findByIdAndTenantId(id, tenantId)).thenReturn(Optional.of(offering));
 
         OfferingResponse response = service.changeActive(tenantId, id, false);

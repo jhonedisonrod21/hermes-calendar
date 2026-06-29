@@ -13,6 +13,7 @@ import jakarta.persistence.Table;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.time.ZoneOffset;
 import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.List;
@@ -67,31 +68,32 @@ public class Appointment {
     protected Appointment() {
     }
 
-    public static Appointment book(
-            UUID id,
-            UUID tenantId,
-            UUID offeringId,
-            UUID customerUserId,
-            LocalDateTime slotStart,
-            LocalDateTime slotEnd,
-            AppointmentStatus status,
-            BigDecimal priceAmount,
-            String priceCurrency,
-            boolean requiresOnlinePayment,
-            List<AppointmentRequirementValue> requirementValues
-    ) {
+    /** Establecimiento, servicio y cliente de la cita. */
+    public record BookingRefs(UUID tenantId, UUID offeringId, UUID customerUserId) {
+    }
+
+    /** Franja horaria (inicio/fin) de la cita. */
+    public record SlotRange(LocalDateTime start, LocalDateTime end) {
+    }
+
+    /** Precio acordado y si exige pago en línea por adelantado. */
+    public record Pricing(BigDecimal priceAmount, String priceCurrency, boolean requiresOnlinePayment) {
+    }
+
+    public static Appointment book(UUID id, BookingRefs refs, SlotRange slot, AppointmentStatus status,
+                                   Pricing pricing, List<AppointmentRequirementValue> requirementValues) {
         Appointment appointment = new Appointment();
         appointment.id = id;
-        appointment.tenantId = tenantId;
-        appointment.offeringId = offeringId;
-        appointment.customerUserId = customerUserId;
-        appointment.slotStart = slotStart;
-        appointment.slotEnd = slotEnd;
+        appointment.tenantId = refs.tenantId();
+        appointment.offeringId = refs.offeringId();
+        appointment.customerUserId = refs.customerUserId();
+        appointment.slotStart = slot.start();
+        appointment.slotEnd = slot.end();
         appointment.status = status;
-        appointment.priceAmount = priceAmount;
-        appointment.priceCurrency = priceCurrency;
-        appointment.requiresOnlinePayment = requiresOnlinePayment;
-        appointment.createdAt = OffsetDateTime.now();
+        appointment.priceAmount = pricing.priceAmount();
+        appointment.priceCurrency = pricing.priceCurrency();
+        appointment.requiresOnlinePayment = pricing.requiresOnlinePayment();
+        appointment.createdAt = OffsetDateTime.now(ZoneOffset.UTC);
         appointment.updatedAt = appointment.createdAt;
         appointment.requirementValues.addAll(requirementValues);
         return appointment;
@@ -99,14 +101,14 @@ public class Appointment {
 
     public void changeStatus(AppointmentStatus status) {
         this.status = status;
-        this.updatedAt = OffsetDateTime.now();
+        this.updatedAt = OffsetDateTime.now(ZoneOffset.UTC);
     }
 
     /** Mueve la cita a un nuevo cupo (mismo servicio); el estado no cambia. */
     public void reschedule(LocalDateTime slotStart, LocalDateTime slotEnd) {
         this.slotStart = slotStart;
         this.slotEnd = slotEnd;
-        this.updatedAt = OffsetDateTime.now();
+        this.updatedAt = OffsetDateTime.now(ZoneOffset.UTC);
     }
 
     public UUID getId() {

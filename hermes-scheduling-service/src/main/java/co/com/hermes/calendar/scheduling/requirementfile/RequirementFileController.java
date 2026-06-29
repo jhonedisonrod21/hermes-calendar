@@ -67,7 +67,7 @@ public class RequirementFileController {
     private static MediaType parseContentType(String contentType) {
         try {
             return MediaType.parseMediaType(contentType);
-        } catch (RuntimeException ex) {
+        } catch (RuntimeException _) {
             return MediaType.APPLICATION_OCTET_STREAM;
         }
     }
@@ -80,7 +80,7 @@ public class RequirementFileController {
         }
         try {
             return UUID.fromString(userId);
-        } catch (IllegalArgumentException ex) {
+        } catch (IllegalArgumentException _) {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Invalid user identity");
         }
     }
@@ -93,7 +93,7 @@ public class RequirementFileController {
         }
         try {
             return UUID.fromString(tenantId);
-        } catch (IllegalArgumentException ex) {
+        } catch (IllegalArgumentException _) {
             return null;
         }
     }

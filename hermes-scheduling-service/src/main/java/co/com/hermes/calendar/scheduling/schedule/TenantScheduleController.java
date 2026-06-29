@@ -80,7 +80,7 @@ public class TenantScheduleController {
         }
         try {
             return UUID.fromString(tenantId);
-        } catch (IllegalArgumentException ex) {
+        } catch (IllegalArgumentException _) {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Invalid tenant context");
         }
     }

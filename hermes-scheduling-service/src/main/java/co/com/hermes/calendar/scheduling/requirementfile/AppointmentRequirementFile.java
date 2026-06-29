@@ -8,6 +8,7 @@ import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 
 import java.time.OffsetDateTime;
+import java.time.ZoneOffset;
 import java.util.UUID;
 
 /**
@@ -69,7 +70,7 @@ public class AppointmentRequirementFile {
         file.sizeBytes = sizeBytes;
         file.ownerUserId = ownerUserId;
         file.status = Status.PENDING;
-        file.createdAt = OffsetDateTime.now();
+        file.createdAt = OffsetDateTime.now(ZoneOffset.UTC);
         return file;
     }
 

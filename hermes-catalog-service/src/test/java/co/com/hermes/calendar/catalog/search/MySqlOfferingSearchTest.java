@@ -31,7 +31,8 @@ class MySqlOfferingSearchTest {
         Offering offering = Offering.create(
                 UUID.randomUUID(),
                 new CallerTenant(tenantId, "cafe-central", "Cafe Central"),
-                "Limpieza dental", "Profilaxis", "Odontologia", 30, Modality.IN_PERSON, null, null, false);
+                new Offering.OfferingDetails("Limpieza dental", "Profilaxis", "Odontologia", 30, Modality.IN_PERSON),
+                new Offering.Pricing(null, null, false));
         when(offerings.findAll(any(Specification.class), any(Pageable.class)))
                 .thenReturn(new PageImpl<>(List.of(offering)));
 

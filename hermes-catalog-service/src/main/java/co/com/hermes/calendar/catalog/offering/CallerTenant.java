@@ -22,7 +22,7 @@ public record CallerTenant(UUID id, String slug, String name) {
                     UUID.fromString(tenantId),
                     jwt.getClaimAsString("tenant_slug"),
                     jwt.getClaimAsString("tenant_name"));
-        } catch (IllegalArgumentException ex) {
+        } catch (IllegalArgumentException _) {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Invalid tenant context");
         }
     }

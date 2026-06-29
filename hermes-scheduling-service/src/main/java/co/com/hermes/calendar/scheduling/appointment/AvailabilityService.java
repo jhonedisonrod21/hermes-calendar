@@ -2,7 +2,6 @@ package co.com.hermes.calendar.scheduling.appointment;
 
 import co.com.hermes.calendar.scheduling.catalog.CatalogClient;
 import co.com.hermes.calendar.scheduling.catalog.OfferingSnapshot;
-import co.com.hermes.calendar.scheduling.schedule.BusinessHours;
 import co.com.hermes.calendar.scheduling.schedule.BusinessHoursRepository;
 import co.com.hermes.calendar.scheduling.schedule.ExceptionType;
 import co.com.hermes.calendar.scheduling.schedule.ScheduleException;
@@ -85,7 +84,7 @@ public class AvailabilityService {
             return List.of(new OpenInterval(exception.getOpensAt(), exception.getClosesAt()));
         }
         return businessHours.findByTenantIdOrderByDayOfWeekAscOpensAtAsc(tenantId).stream()
-                .filter(h -> h.getDayOfWeek() == date.getDayOfWeek())
+                .filter(h -> date.getDayOfWeek().equals(h.getDayOfWeek()))
                 .map(h -> new OpenInterval(h.getOpensAt(), h.getClosesAt()))
                 .toList();
     }

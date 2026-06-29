@@ -10,6 +10,7 @@ import org.springframework.web.server.ResponseStatusException;
 
 import java.time.Duration;
 import java.time.LocalDateTime;
+import java.time.Month;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -34,13 +35,13 @@ class BookingServiceTest {
     private final UUID offeringId = UUID.randomUUID();
     private final UUID tenantId = UUID.randomUUID();
     private final UUID userId = UUID.randomUUID();
-    private final LocalDateTime slotStart = LocalDateTime.of(2026, 7, 1, 9, 0);
+    private final LocalDateTime slotStart = LocalDateTime.of(2026, Month.JULY, 1, 9, 0);
 
     private OfferingSnapshot offering(boolean paid, List<OfferingSnapshot.Requirement> reqs) {
         return new OfferingSnapshot(offeringId, tenantId, "Cita", 30, "IN_PERSON", null, null, paid, true, reqs);
     }
 
-    private void slotIsAvailable(OfferingSnapshot offering) {
+    private void slotIsAvailable() {
         when(availability.slotsFor(any(), any())).thenReturn(List.of(new AvailableSlot(slotStart, slotStart.plusMinutes(30))));
     }
 
@@ -48,7 +49,7 @@ class BookingServiceTest {
     void confirmsFreeBooking() {
         OfferingSnapshot offering = offering(false, List.of());
         when(catalog.findOffering(offeringId)).thenReturn(Optional.of(offering));
-        slotIsAvailable(offering);
+        slotIsAvailable();
         when(appointments.saveAndFlush(any(Appointment.class))).thenAnswer(i -> i.getArgument(0));
 
         AppointmentResponse response = service.book(userId, new AppointmentBookingRequest(offeringId, slotStart, null));
@@ -62,7 +63,7 @@ class BookingServiceTest {
     void leavesPaidBookingPendingPayment() {
         OfferingSnapshot offering = offering(true, List.of());
         when(catalog.findOffering(offeringId)).thenReturn(Optional.of(offering));
-        slotIsAvailable(offering);
+        slotIsAvailable();
         when(appointments.saveAndFlush(any(Appointment.class))).thenAnswer(i -> i.getArgument(0));
 
         AppointmentResponse response = service.book(userId, new AppointmentBookingRequest(offeringId, slotStart, null));
@@ -76,7 +77,8 @@ class BookingServiceTest {
         when(catalog.findOffering(offeringId)).thenReturn(Optional.of(offering));
         when(availability.slotsFor(any(), any())).thenReturn(List.of());
 
-        assertThatThrownBy(() -> service.book(userId, new AppointmentBookingRequest(offeringId, slotStart, null)))
+        var request = new AppointmentBookingRequest(offeringId, slotStart, null);
+        assertThatThrownBy(() -> service.book(userId, request))
                 .isInstanceOf(ResponseStatusException.class)
                 .extracting("statusCode").isEqualTo(HttpStatus.CONFLICT);
     }
@@ -86,22 +88,24 @@ class BookingServiceTest {
         OfferingSnapshot offering = offering(false,
                 List.of(new OfferingSnapshot.Requirement("vehicle_plate", "Matricula", "TEXT", true)));
         when(catalog.findOffering(offeringId)).thenReturn(Optional.of(offering));
-        slotIsAvailable(offering);
+        slotIsAvailable();
 
-        assertThatThrownBy(() -> service.book(userId, new AppointmentBookingRequest(offeringId, slotStart, Map.of())))
+        var request = new AppointmentBookingRequest(offeringId, slotStart, Map.of());
+        assertThatThrownBy(() -> service.book(userId, request))
                 .isInstanceOf(ResponseStatusException.class)
                 .extracting("statusCode").isEqualTo(HttpStatus.BAD_REQUEST);
     }
 
     private Appointment confirmed(UUID id) {
-        return Appointment.book(id, tenantId, offeringId, userId, slotStart, slotStart.plusMinutes(30),
-                AppointmentStatus.CONFIRMED, null, null, false, List.of());
+        return Appointment.book(id, new Appointment.BookingRefs(tenantId, offeringId, userId),
+                new Appointment.SlotRange(slotStart, slotStart.plusMinutes(30)),
+                AppointmentStatus.CONFIRMED, new Appointment.Pricing(null, null, false), List.of());
     }
 
     @Test
     void reschedulesToAvailableSlot() {
         UUID apptId = UUID.randomUUID();
-        LocalDateTime newStart = LocalDateTime.of(2026, 7, 2, 10, 30);
+        LocalDateTime newStart = LocalDateTime.of(2026, Month.JULY, 2, 10, 30);
         when(appointments.findByIdAndCustomerUserId(apptId, userId)).thenReturn(Optional.of(confirmed(apptId)));
         when(catalog.findOffering(offeringId)).thenReturn(Optional.of(offering(false, List.of())));
         when(availability.slotsFor(any(), any())).thenReturn(List.of(new AvailableSlot(newStart, newStart.plusMinutes(30))));
@@ -116,7 +120,7 @@ class BookingServiceTest {
     @Test
     void rejectsRescheduleToUnavailableSlot() {
         UUID apptId = UUID.randomUUID();
-        LocalDateTime newStart = LocalDateTime.of(2026, 7, 2, 10, 30);
+        LocalDateTime newStart = LocalDateTime.of(2026, Month.JULY, 2, 10, 30);
         when(appointments.findByIdAndCustomerUserId(apptId, userId)).thenReturn(Optional.of(confirmed(apptId)));
         when(catalog.findOffering(offeringId)).thenReturn(Optional.of(offering(false, List.of())));
         when(availability.slotsFor(any(), any())).thenReturn(List.of());
@@ -129,18 +133,21 @@ class BookingServiceTest {
     @Test
     void rejectsRescheduleOfCancelledAppointment() {
         UUID apptId = UUID.randomUUID();
-        Appointment cancelled = Appointment.book(apptId, tenantId, offeringId, userId, slotStart, slotStart.plusMinutes(30),
-                AppointmentStatus.CANCELLED, null, null, false, List.of());
+        Appointment cancelled = Appointment.book(apptId, new Appointment.BookingRefs(tenantId, offeringId, userId),
+                new Appointment.SlotRange(slotStart, slotStart.plusMinutes(30)),
+                AppointmentStatus.CANCELLED, new Appointment.Pricing(null, null, false), List.of());
         when(appointments.findByIdAndCustomerUserId(apptId, userId)).thenReturn(Optional.of(cancelled));
 
-        assertThatThrownBy(() -> service.rescheduleByCustomer(apptId, userId, LocalDateTime.of(2026, 7, 2, 10, 30)))
+        LocalDateTime newStart = LocalDateTime.of(2026, Month.JULY, 2, 10, 30);
+        assertThatThrownBy(() -> service.rescheduleByCustomer(apptId, userId, newStart))
                 .isInstanceOf(ResponseStatusException.class)
                 .extracting("statusCode").isEqualTo(HttpStatus.CONFLICT);
     }
 
     private Appointment pending(UUID id) {
-        return Appointment.book(id, tenantId, offeringId, userId, slotStart, slotStart.plusMinutes(30),
-                AppointmentStatus.PENDING_PAYMENT, null, null, true, List.of());
+        return Appointment.book(id, new Appointment.BookingRefs(tenantId, offeringId, userId),
+                new Appointment.SlotRange(slotStart, slotStart.plusMinutes(30)),
+                AppointmentStatus.PENDING_PAYMENT, new Appointment.Pricing(null, null, true), List.of());
     }
 
     @Test
@@ -164,8 +171,9 @@ class BookingServiceTest {
     @Test
     void confirmPaymentRejectsExpiredAppointment() {
         UUID apptId = UUID.randomUUID();
-        Appointment expired = Appointment.book(apptId, tenantId, offeringId, userId, slotStart, slotStart.plusMinutes(30),
-                AppointmentStatus.EXPIRED, null, null, true, List.of());
+        Appointment expired = Appointment.book(apptId, new Appointment.BookingRefs(tenantId, offeringId, userId),
+                new Appointment.SlotRange(slotStart, slotStart.plusMinutes(30)),
+                AppointmentStatus.EXPIRED, new Appointment.Pricing(null, null, true), List.of());
         when(appointments.findById(apptId)).thenReturn(Optional.of(expired));
 
         assertThat(service.confirmPayment(apptId)).isEqualTo(BookingService.ConfirmationResult.NOT_CONFIRMABLE);
@@ -211,8 +219,9 @@ class BookingServiceTest {
     @Test
     void completeIsIdempotentWhenAlreadyCompleted() {
         UUID apptId = UUID.randomUUID();
-        Appointment appointment = Appointment.book(apptId, tenantId, offeringId, userId, slotStart, slotStart.plusMinutes(30),
-                AppointmentStatus.COMPLETED, null, null, false, List.of());
+        Appointment appointment = Appointment.book(apptId, new Appointment.BookingRefs(tenantId, offeringId, userId),
+                new Appointment.SlotRange(slotStart, slotStart.plusMinutes(30)),
+                AppointmentStatus.COMPLETED, new Appointment.Pricing(null, null, false), List.of());
         when(appointments.findByIdAndTenantId(apptId, tenantId)).thenReturn(Optional.of(appointment));
 
         assertThat(service.completeByTenant(apptId, tenantId).status()).isEqualTo(AppointmentStatus.COMPLETED);
@@ -244,7 +253,7 @@ class BookingServiceTest {
         OfferingSnapshot offering = offering(false,
                 List.of(new OfferingSnapshot.Requirement("vehicle_plate", "Matricula", "TEXT", true)));
         when(catalog.findOffering(offeringId)).thenReturn(Optional.of(offering));
-        slotIsAvailable(offering);
+        slotIsAvailable();
         when(appointments.saveAndFlush(any(Appointment.class))).thenAnswer(i -> i.getArgument(0));
 
         AppointmentResponse response = service.book(userId,

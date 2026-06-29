@@ -8,13 +8,18 @@ import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 
 import java.time.LocalDate;
+import java.time.ZoneOffset;
 import java.time.LocalTime;
 import java.time.OffsetDateTime;
 import java.util.UUID;
 
-/** Excepción de calendario para una fecha: feriado/cierre u horario especial. */
+/**
+ * Excepción de calendario para una fecha: feriado/cierre u horario especial. Es una entidad de dominio
+ * (no un {@link Throwable}); el nombre refleja el concepto de negocio "excepción del horario".
+ */
 @Entity
 @Table(name = "schedule_exceptions")
+@SuppressWarnings("java:S2166")
 public class ScheduleException {
 
     @Id
@@ -62,7 +67,7 @@ public class ScheduleException {
         exception.opensAt = opensAt;
         exception.closesAt = closesAt;
         exception.description = description;
-        exception.createdAt = OffsetDateTime.now();
+        exception.createdAt = OffsetDateTime.now(ZoneOffset.UTC);
         return exception;
     }
 

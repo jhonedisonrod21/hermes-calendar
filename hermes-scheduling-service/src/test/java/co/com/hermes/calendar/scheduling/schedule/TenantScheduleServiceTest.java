@@ -6,6 +6,7 @@ import org.springframework.web.server.ResponseStatusException;
 
 import java.time.DayOfWeek;
 import java.time.LocalDate;
+import java.time.Month;
 import java.time.LocalTime;
 import java.util.List;
 import java.util.Optional;
@@ -58,11 +59,11 @@ class TenantScheduleServiceTest {
 
     @Test
     void registersHolidayClosed() {
-        when(exceptions.existsByTenantIdAndDate(tenantId, LocalDate.of(2026, 12, 25))).thenReturn(false);
+        when(exceptions.existsByTenantIdAndDate(tenantId, LocalDate.of(2026, Month.DECEMBER, 25))).thenReturn(false);
         when(exceptions.save(any(ScheduleException.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
         ScheduleExceptionResponse response = service.addException(tenantId,
-                new ScheduleExceptionRequest(LocalDate.of(2026, 12, 25), ExceptionType.CLOSED, null, null, "Navidad"));
+                new ScheduleExceptionRequest(LocalDate.of(2026, Month.DECEMBER, 25), ExceptionType.CLOSED, null, null, "Navidad"));
 
         assertThat(response.type()).isEqualTo(ExceptionType.CLOSED);
         assertThat(response.opensAt()).isNull();
@@ -73,18 +74,18 @@ class TenantScheduleServiceTest {
     void rejectsSpecialHoursWithoutTimes() {
         when(exceptions.existsByTenantIdAndDate(any(), any())).thenReturn(false);
 
-        assertThatThrownBy(() -> service.addException(tenantId,
-                new ScheduleExceptionRequest(LocalDate.of(2026, 12, 24), ExceptionType.SPECIAL_HOURS, null, null, "Vispera")))
+        var request = new ScheduleExceptionRequest(LocalDate.of(2026, Month.DECEMBER, 24), ExceptionType.SPECIAL_HOURS, null, null, "Vispera");
+        assertThatThrownBy(() -> service.addException(tenantId, request))
                 .isInstanceOf(ResponseStatusException.class)
                 .extracting("statusCode").isEqualTo(HttpStatus.BAD_REQUEST);
     }
 
     @Test
     void rejectsDuplicateExceptionDate() {
-        when(exceptions.existsByTenantIdAndDate(tenantId, LocalDate.of(2026, 1, 1))).thenReturn(true);
+        when(exceptions.existsByTenantIdAndDate(tenantId, LocalDate.of(2026, Month.JANUARY, 1))).thenReturn(true);
 
-        assertThatThrownBy(() -> service.addException(tenantId,
-                new ScheduleExceptionRequest(LocalDate.of(2026, 1, 1), ExceptionType.CLOSED, null, null, "Anio nuevo")))
+        var request = new ScheduleExceptionRequest(LocalDate.of(2026, Month.JANUARY, 1), ExceptionType.CLOSED, null, null, "Anio nuevo");
+        assertThatThrownBy(() -> service.addException(tenantId, request))
                 .isInstanceOf(ResponseStatusException.class)
                 .extracting("statusCode").isEqualTo(HttpStatus.CONFLICT);
     }

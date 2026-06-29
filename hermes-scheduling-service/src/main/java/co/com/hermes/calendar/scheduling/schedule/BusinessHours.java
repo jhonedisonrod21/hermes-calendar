@@ -8,6 +8,7 @@ import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 
 import java.time.DayOfWeek;
+import java.time.ZoneOffset;
 import java.time.LocalTime;
 import java.time.OffsetDateTime;
 import java.util.UUID;
@@ -46,7 +47,7 @@ public class BusinessHours {
         hours.dayOfWeek = dayOfWeek;
         hours.opensAt = opensAt;
         hours.closesAt = closesAt;
-        hours.createdAt = OffsetDateTime.now();
+        hours.createdAt = OffsetDateTime.now(ZoneOffset.UTC);
         return hours;
     }
 

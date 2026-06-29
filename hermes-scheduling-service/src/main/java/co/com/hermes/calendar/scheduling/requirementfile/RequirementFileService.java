@@ -9,6 +9,8 @@ import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.io.IOException;
+import java.util.Arrays;
+import java.util.Objects;
 import java.util.Set;
 import java.util.UUID;
 
@@ -41,7 +43,7 @@ public class RequirementFileService {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Empty file");
         }
         if (file.getSize() > MAX_SIZE_BYTES) {
-            throw new ResponseStatusException(HttpStatus.PAYLOAD_TOO_LARGE, "File exceeds 10 MB");
+            throw new ResponseStatusException(HttpStatus.CONTENT_TOO_LARGE, "File exceeds 10 MB");
         }
         String contentType = file.getContentType() == null ? "application/octet-stream" : file.getContentType();
         if (!ALLOWED_CONTENT_TYPES.contains(contentType)) {
@@ -120,5 +122,23 @@ public class RequirementFileService {
 
     /** Contenido y metadatos para servir una descarga. */
     public record DownloadedFile(String filename, String contentType, byte[] content) {
+        @Override
+        public boolean equals(Object o) {
+            return o instanceof DownloadedFile(String otherName, String otherType, byte[] otherContent)
+                    && Objects.equals(filename, otherName)
+                    && Objects.equals(contentType, otherType)
+                    && Arrays.equals(content, otherContent);
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(filename, contentType) * 31 + Arrays.hashCode(content);
+        }
+
+        @Override
+        public String toString() {
+            return "DownloadedFile[filename=" + filename + ", contentType=" + contentType
+                    + ", size=" + (content == null ? 0 : content.length) + "]";
+        }
     }
 }

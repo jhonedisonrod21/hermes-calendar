@@ -37,7 +37,7 @@ public class CatalogReportClient {
                     .onStatus(status -> status.value() == HttpStatus.NOT_FOUND.value(), (req, res) -> { })
                     .body(Offering.class);
             return Optional.ofNullable(offering).map(Offering::name);
-        } catch (RuntimeException ex) {
+        } catch (RuntimeException _) {
             return Optional.empty();
         }
     }
