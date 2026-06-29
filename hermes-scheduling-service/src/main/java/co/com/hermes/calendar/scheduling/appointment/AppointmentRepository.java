@@ -23,6 +23,10 @@ public interface AppointmentRepository extends JpaRepository<Appointment, UUID> 
 
     Page<Appointment> findByTenantId(UUID tenantId, Pageable pageable);
 
+    /** Citas de un tenant cuyo inicio cae en el rango [from, to) (para la vista calendario). */
+    List<Appointment> findByTenantIdAndSlotStartGreaterThanEqualAndSlotStartLessThan(
+            UUID tenantId, LocalDateTime from, LocalDateTime to);
+
     /** Citas de un cliente (para su pantalla "mis citas"). */
     Page<Appointment> findByCustomerUserId(UUID customerUserId, Pageable pageable);
 

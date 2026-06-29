@@ -3,6 +3,7 @@ package co.com.hermes.calendar.scheduling.appointment;
 import co.com.hermes.calendar.scheduling.catalog.CatalogClient;
 import co.com.hermes.calendar.scheduling.catalog.OfferingSnapshot;
 import co.com.hermes.calendar.scheduling.notification.NotificationClient;
+import co.com.hermes.calendar.scheduling.requirementfile.RequirementFileService;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.server.ResponseStatusException;
@@ -27,7 +28,8 @@ class BookingServiceTest {
     private final AvailabilityService availability = mock(AvailabilityService.class);
     private final AppointmentRepository appointments = mock(AppointmentRepository.class);
     private final NotificationClient notificationClient = mock(NotificationClient.class);
-    private final BookingService service = new BookingService(catalog, availability, appointments, notificationClient);
+    private final RequirementFileService requirementFiles = mock(RequirementFileService.class);
+    private final BookingService service = new BookingService(catalog, availability, appointments, notificationClient, requirementFiles);
 
     private final UUID offeringId = UUID.randomUUID();
     private final UUID tenantId = UUID.randomUUID();

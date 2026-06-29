@@ -6,6 +6,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -15,9 +16,12 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.server.ResponseStatusException;
 
+import java.time.LocalDateTime;
+import java.util.List;
 import java.util.UUID;
 
 /**
@@ -41,6 +45,15 @@ public class TenantAppointmentController {
     @Operation(summary = "Lista las citas de mi establecimiento")
     public Page<AppointmentResponse> list(@AuthenticationPrincipal Jwt jwt, Pageable pageable) {
         return booking.listForTenant(callerTenant(jwt), pageable);
+    }
+
+    @GetMapping("/calendar")
+    @Operation(summary = "Citas de mi establecimiento que inician en el rango [from, to) (vista calendario)")
+    public List<AppointmentResponse> calendar(
+            @AuthenticationPrincipal Jwt jwt,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime from,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime to) {
+        return booking.listForTenantInRange(callerTenant(jwt), from, to);
     }
 
     @GetMapping("/{id}")
